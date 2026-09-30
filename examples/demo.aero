@@ -1,0 +1,19 @@
+START
+NUM : age = 20, remaining = 3;
+CHR : grade = 'A';
+GET(age);
+PRINT("Welcome");
+TEST(age > 18 && grade == 'A') {
+    PRINT(age);
+}
+RETEST(age == 18) {
+    PRINT("Exactly eighteen");
+}
+OTHERWISE {
+    PRINT("Under eighteen");
+}
+CYCLE(remaining > 0) {
+    PRINT(remaining);
+    remaining = remaining - 1;
+}
+END
