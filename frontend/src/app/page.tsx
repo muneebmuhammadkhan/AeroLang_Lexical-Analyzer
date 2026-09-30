@@ -7,7 +7,6 @@ import { EXAMPLES } from '@/lib/examples';
 export default function AeroLangIDE() {
   const [code, setCode] = useState<string>(EXAMPLES[0].code);
   const [selectedPreset, setSelectedPreset] = useState<string>('demo');
-  const [autoAnalyze, setAutoAnalyze] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'tokens' | 'cli' | 'json' | 'spec'>('tokens');
   const [cursorPos, setCursorPos] = useState<{ line: number; col: number }>({ line: 1, col: 1 });
   const [activeLine, setActiveLine] = useState<number | null>(null);
@@ -28,10 +27,8 @@ export default function AeroLangIDE() {
   };
 
   useEffect(() => {
-    if (autoAnalyze) {
-      runAnalysis(code);
-    }
-  }, [code, autoAnalyze]);
+    runAnalysis(code);
+  }, [code]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -201,15 +198,6 @@ export default function AeroLangIDE() {
                 ))}
                 {selectedPreset === 'custom' && <option value="custom">Custom File</option>}
               </select>
-
-              <button
-                className={`btn-toggle ${autoAnalyze ? 'active' : ''}`}
-                onClick={() => setAutoAnalyze(!autoAnalyze)}
-                title="Toggle instant auto-analysis on typing"
-              >
-                <div className="toggle-dot" />
-                <span>Live</span>
-              </button>
             </div>
 
             <div className="toolbar-group">
