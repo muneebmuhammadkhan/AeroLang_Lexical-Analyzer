@@ -59,6 +59,8 @@ export const SYMBOLS: Record<string, [string, string]> = {
   '}': ['RIGHTBRACE', 'Delimiter'],
 };
 
+export const MAX_IDENTIFIER_LENGTH = 10;
+
 const WORD_REGEX = /^[A-Za-z0-9_]+/;
 const INTEGER_REGEX = /^[0-9]+$/;
 const CHARACTER_REGEX = /^'[A-Za-z]'$/;
@@ -97,6 +99,38 @@ export function tokenize(source: string): LexerResult {
       continue;
     }
 
+    // Single-line comment: // ...
+    if (source.startsWith('//', offset)) {
+      const newlineIdx = source.indexOf('\n', offset + 2);
+      const rIdx = source.indexOf('\r', offset + 2);
+      let endIdx = -1;
+      if (newlineIdx !== -1 && rIdx !== -1) {
+        endIdx = Math.min(newlineIdx, rIdx);
+      } else {
+        endIdx = newlineIdx !== -1 ? newlineIdx : rIdx;
+      }
+      if (endIdx === -1) {
+        advance(source.length);
+      } else {
+        advance(endIdx);
+      }
+      continue;
+    }
+
+    // Multi-line comment: /* ... */
+    if (source.startsWith('/*', offset)) {
+      const start = { offset, line, column };
+      const closing = source.indexOf('*/', offset + 2);
+      if (closing === -1) {
+        advance(source.length);
+        const lexeme = source.slice(start.offset, offset);
+        errors.push({ message: 'Unterminated multi-line comment', lexeme, ...start });
+      } else {
+        advance(closing + 2);
+      }
+      continue;
+    }
+
     const start = { offset, line, column };
     let tokenType: string | null = null;
     let category: string | null = null;
@@ -110,8 +144,15 @@ export function tokenize(source: string): LexerResult {
       advance(offset + lexeme.length);
 
       if ((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z')) {
-        tokenType = KEYWORDS[lexeme] || 'ID';
-        category = KEYWORDS[lexeme] ? 'Keyword' : 'Identifier';
+        if (lexeme in KEYWORDS) {
+          tokenType = KEYWORDS[lexeme];
+          category = 'Keyword';
+        } else if (lexeme.length > MAX_IDENTIFIER_LENGTH) {
+          message = `Identifier exceeds maximum length of ${MAX_IDENTIFIER_LENGTH} characters`;
+        } else {
+          tokenType = 'ID';
+          category = 'Identifier';
+        }
       } else if (INTEGER_REGEX.test(lexeme)) {
         tokenType = 'NUM_CONST';
         category = 'Integer Constant';

@@ -495,9 +495,10 @@ export default function AeroLangIDE() {
               </div>
 
               <div className="spec-section">
-                <div className="spec-title">Lexical Invariants</div>
+                <div className="spec-title">Comments & Invariants</div>
                 <ul style={{ fontSize: '0.78rem', color: '#a1a1aa', lineHeight: '1.75', paddingLeft: '1.25rem' }}>
-                  <li><strong>Identifiers:</strong> Must begin with an ASCII letter (A-Z or a-z), followed by letters, digits, or underscores. Identifiers starting with a digit (e.g. <code>2a0</code>) cause lexical errors.</li>
+                  <li><strong>Comments:</strong> Single-line comments begin with <code>//</code> and continue to the end of the line. Multi-line comments are enclosed between <code>/*</code> and <code>*/</code>. Comments are skipped like whitespace. Unterminated multi-line comments produce a lexical error.</li>
+                  <li><strong>Identifiers:</strong> Must begin with an ASCII letter (A-Z or a-z), followed by letters, digits, or underscores, with a maximum length of <strong>10 characters</strong>. Identifiers longer than 10 characters or starting with a digit (e.g. <code>2a0</code>) cause lexical errors.</li>
                   <li><strong>Character Constants:</strong> Enclosed in single quotes with exactly one ASCII letter (e.g. <code>&apos;A&apos;</code>).</li>
                   <li><strong>String Constants:</strong> Enclosed in double quotes (e.g. <code>&quot;Welcome&quot;</code>).</li>
                   <li><strong>Signs:</strong> + and - are parsed as standalone arithmetic operators.</li>

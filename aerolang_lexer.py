@@ -24,6 +24,7 @@ SYMBOLS = {
     '(': ('LEFTPAREN', 'Delimiter'), ')': ('RIGHTPAREN', 'Delimiter'),
     '{': ('LEFTBRACE', 'Delimiter'), '}': ('RIGHTBRACE', 'Delimiter'),
 }
+MAX_IDENTIFIER_LENGTH = 10
 WORD = re.compile(r'[A-Za-z0-9_]+')
 INTEGER = re.compile(r'[0-9]+')
 CHARACTER = re.compile(r"'[A-Za-z]'")
@@ -57,6 +58,34 @@ def tokenize(source):
             advance(offset + 1)
             continue
 
+        # Single-line comment: // ...
+        if source.startswith('//', offset):
+            n_idx = source.find('\n', offset + 2)
+            r_idx = source.find('\r', offset + 2)
+            if n_idx != -1 and r_idx != -1:
+                end_idx = min(n_idx, r_idx)
+            elif n_idx != -1:
+                end_idx = n_idx
+            else:
+                end_idx = r_idx
+            if end_idx == -1:
+                advance(len(source))
+            else:
+                advance(end_idx)
+            continue
+
+        # Multi-line comment: /* ... */
+        if source.startswith('/*', offset):
+            start = {'offset': offset, 'line': line, 'column': column}
+            closing = source.find('*/', offset + 2)
+            if closing == -1:
+                advance(len(source))
+                lexeme = source[start['offset']:offset]
+                errors.append({'message': 'Unterminated multi-line comment', 'lexeme': lexeme, **start})
+            else:
+                advance(closing + 2)
+            continue
+
         start = {'offset': offset, 'line': line, 'column': column}
         token_type = category = message = None
         match = WORD.match(source, offset)
@@ -64,8 +93,14 @@ def tokenize(source):
             lexeme = match.group()
             advance(match.end())
             if 'A' <= char <= 'Z' or 'a' <= char <= 'z':
-                token_type = KEYWORDS.get(lexeme, 'ID')
-                category = 'Keyword' if lexeme in KEYWORDS else 'Identifier'
+                if lexeme in KEYWORDS:
+                    token_type = KEYWORDS[lexeme]
+                    category = 'Keyword'
+                elif len(lexeme) > MAX_IDENTIFIER_LENGTH:
+                    message = f'Identifier exceeds maximum length of {MAX_IDENTIFIER_LENGTH} characters'
+                else:
+                    token_type = 'ID'
+                    category = 'Identifier'
             elif INTEGER.fullmatch(lexeme):
                 token_type, category = 'NUM_CONST', 'Integer Constant'
             else:

@@ -1,4 +1,4 @@
-﻿# AeroLang Lexical Analyzer (Python)
+# AeroLang Lexical Analyzer (Python)
 
 Yeh project `AeroLang_Language_Specification_Full.docx` ke mutabiq AeroLang source code ko **tokens** mein divide karta hai. Misal: `NUM : age = 25;` mein `NUM` keyword, `age` identifier aur `25` integer literal hai.
 
@@ -115,10 +115,18 @@ Line  Column  Token      Lexeme  Class
 
 | Type | Rule | Example | Token |
 | --- | --- | --- | --- |
-| Identifier | `[A-Za-z][A-Za-z0-9_]*` | `age`, `student1`, `total_marks` | `ID` |
+| Identifier | `[A-Za-z][A-Za-z0-9_]*` (Max 10 characters) | `age`, `student1`, `total_mark` | `ID` |
 | Integer | `[0-9]+` | `25`, `100` | `NUM_CONST` |
 | Character | Single quotes mein exactly aik ASCII letter | `'A'`, `'z'` | `CHAR_CONST` |
 | String | Double quotes ke andar text | `"Hello"`, `""` | `STR_CONST` |
+
+### Comments
+
+AeroLang mein do tarah ke comments supported hain:
+- **Single-line comments:** `//` se shuru hote hain aur line ke aakhir tak chalte hain (e.g. `// variable initialization`).
+- **Multi-line comments:** `/*` se shuru hote hain aur `*/` par khatam hote hain (e.g. `/* block comment */`).
+
+Comments ko standard compiler lexers ki tarah whitespace samjh kar skip kiya jata hai, taake line aur column count accurate rahein. Agar multi-line comment band na kiya jaye (`/* ...` bina `*/`), to lexical error emit hota hai.
 
 ### Operators aur delimiters
 
@@ -136,8 +144,8 @@ Line  Column  Token      Lexeme  Class
 
 1. File UTF-8 text ke taur par read hoti hai.
 2. `tokenize(source)` text ko left se right scan karta hai.
-3. Whitespace skip hoti hai; line aur column update hote hain.
-4. Words ko keyword, identifier ya integer classify kiya jata hai.
+3. Whitespace aur comments (`//`, `/* */`) skip hote hain; line aur column update hote hain.
+4. Words ko keyword, identifier ya integer classify kiya jata hai. Identifiers ka length limit (maximum 10 characters) check hota hai.
 5. Quotes se shuru hone wale text ko literal ke taur par check kiya jata hai.
 6. Two-character operators pehle match hote hain, taake `>=` aik token bane.
 7. Valid tokens aur lexical errors alag lists mein save hote hain.
@@ -148,9 +156,11 @@ Line  Column  Token      Lexeme  Class
 | Invalid input | Wajah |
 | --- | --- |
 | `1age`, `_name` | Identifier ASCII letter se start nahi hua |
+| `total_marks` | Identifier 10 characters se bara hai (max length: 10) |
 | `@`, `&`, `\|` | Unsupported character/operator |
 | `'AB'`, `'1'`, `''` | Exactly aik ASCII letter nahi hai |
-| `"Hello` | Closing quote missing hai |
+| `"Hello` | Closing quote missing hai (unterminated string) |
+| `/* hello` | Closing `*/` missing hai (unterminated multi-line comment) |
 | `25.5` | Decimal point supported nahi hai |
 
 Error ke saath file, line aur column show hote hain. Recoverable errors ke baad scanning continue hoti hai. Unterminated literal end of input tak consume hota hai.
@@ -187,7 +197,7 @@ for error in result["errors"]:
 python -m unittest -v
 ```
 
-10 tests keywords, identifiers, declarations, operators, errors, strings, positions, sample aur CLI verify karte hain. `python` unavailable ho to upar diya gaya `py` ya full Python path use karein.
+13 tests keywords, identifiers, identifier length limit, comments, declarations, operators, errors, strings, positions, sample aur CLI verify karte hain. `python` unavailable ho to upar diya gaya `py` ya full Python path use karein.
 
 ## Specification decisions aur limitations
 
@@ -195,7 +205,8 @@ python -m unittest -v
 - Document ke `[+/-]` pattern mein slash ko typo maana gaya hai; `/` division hai.
 - Quotes literal ka hissa hain. Document mein listed `SIN_QUOTE` aur `DUAL_QUOTE` separately emit nahi hote; complete `CHAR_CONST` aur `STR_CONST` tokens bante hain.
 - Strings document ke `"[^"]*"` rule ko follow karti hain; empty aur multiline strings allowed hain. Escape sequences defined nahi; backslash ordinary character hai.
-- Comments aur floating-point numbers defined nahi. Comment jaisa text ordinary operators aur identifiers mein tokenize hota hai.
+- Comments: C-style single-line `//` aur multi-line `/* ... */` comments fully supported hain aur whitespace ki tarah skip hote hain.
+- Identifiers: Maximum length 10 characters enforce hoti hai; 10 se zyada characters wale identifiers lexical error bante hain. Floating-point numbers defined nahi.
 - Tabs aik column aur CRLF aik newline count hota hai. Synthetic EOF token add nahi hota.
 - Yeh lexer hai, parser ya interpreter nahi. Missing semicolons, unmatched braces, undeclared variables, type checking aur strings sirf `PRINT` mein use hone ka rule yahan validate nahi hota.
 - `student-name` se `ID sub ID` aur `my age` se do identifiers bante hain; declaration valid hai ya nahi, parser decide karega.

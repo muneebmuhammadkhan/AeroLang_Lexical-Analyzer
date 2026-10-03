@@ -20,7 +20,50 @@ class LexerTests(unittest.TestCase):
                          ['START', 'STOP', 'DT', 'DT', 'INPUT', 'PRINT', 'IF', 'ELSE_IF', 'ELSE', 'WHILE'])
 
     def test_identifiers(self):
-        self.assertEqual(types('start STARTED age student1 total_marks A1'), ['ID'] * 6)
+        self.assertEqual(types('start STARTED age student1 total_mark A1'), ['ID'] * 6)
+
+    def test_identifier_length(self):
+        # Exactly 10 characters: valid identifier
+        self.assertEqual(types('abcdefghij A123456789 _123456789'[11:]), ['ID'])
+        self.assertEqual(len('total_mark'), 10)
+        self.assertEqual(types('total_mark'), ['ID'])
+
+        # Exceeding 10 characters (11 characters): lexical error
+        result = tokenize('total_marks')
+        self.assertEqual(len(result['errors']), 1)
+        self.assertIn('Identifier exceeds maximum length of 10 characters', result['errors'][0]['message'])
+        self.assertEqual(result['errors'][0]['lexeme'], 'total_marks')
+        self.assertEqual(result['tokens'], [])
+
+    def test_comments(self):
+        code = """
+        // Single-line comment before start
+        START // Comment at end of line
+        /* Multi-line comment
+           spanning lines */
+        NUM : age = 10; /* inline multi-line */
+        CYCLE(age > 0) {
+            // inside loop
+            age = age - 1;
+        }
+        END // End comment
+        """
+        result = tokenize(code)
+        self.assertFalse(result['errors'])
+        expected_types = [
+            'START', 'DT', 'COLON', 'ID', 'ASSIGN', 'NUM_CONST', 'SEMICOLON',
+            'WHILE', 'LEFTPAREN', 'ID', 'GT', 'NUM_CONST', 'RIGHTPAREN',
+            'LEFTBRACE', 'ID', 'ASSIGN', 'ID', 'sub', 'NUM_CONST', 'SEMICOLON',
+            'RIGHTBRACE', 'STOP'
+        ]
+        self.assertEqual([t['type'] for t in result['tokens']], expected_types)
+
+    def test_unterminated_comment(self):
+        result = tokenize('START /* unclosed multi-line comment')
+        self.assertEqual(len(result['errors']), 1)
+        self.assertIn('Unterminated multi-line comment', result['errors'][0]['message'])
+        self.assertEqual(result['errors'][0]['line'], 1)
+        self.assertEqual(result['errors'][0]['column'], 7)
 
     def test_declaration(self):
         self.assertEqual(types("NUM : age = 25; CHR : grade = 'A'; PRINT(\"Hello\");"),

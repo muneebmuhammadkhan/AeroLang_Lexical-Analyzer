@@ -9,9 +9,12 @@ export const EXAMPLES: AeroExample[] = [
   {
     id: 'demo',
     name: 'Standard Demo (demo.aero)',
-    description: 'The official demonstration script featuring variables, I/O, conditionals, and cycle loops.',
-    code: `START
-NUM : age = 50, remaining = 3;
+    description: 'The official demonstration script featuring variables, I/O, conditionals, cycle loops, and comments.',
+    code: `// AeroLang Standard Demonstration
+/* Multi-line header:
+   Variables, I/O, and loops */
+START
+NUM : age = 50, remaining = 3; // Age and countdown
 CHR : grade = 'A';
 GET(age);
 PRINT("Welcome");
@@ -31,16 +34,33 @@ CYCLE(remaining > 0) {
 END`,
   },
   {
+    id: 'comments',
+    name: 'Comments (Single & Multi-line)',
+    description: 'Demonstrates C-style single-line (//) and multi-line (/* ... */) comments skipped by the lexical analyzer.',
+    code: `// AeroLang Comment Syntax Demo
+START
+// Initialize student score
+NUM : score = 95;
+
+/* Multi-line comments can span
+   multiple lines without affecting
+   line or column number accuracy */
+PRINT("Score processed");
+
+NUM : val = 10 / 2; // Division operator / is preserved!
+END`,
+  },
+  {
     id: 'errors',
     name: 'Lexical Error Showcase',
-    description: 'Showcases various lexical errors: invalid identifiers starting with digits, unterminated strings, invalid characters.',
+    description: 'Showcases various lexical errors: identifiers exceeding 10 chars, starting with digits, unterminated strings, and unclosed comments.',
     code: `START
 NUM : 1count = 50;
+NUM : identifier_too_long = 100;
 CHR : flag = 'AB';
 NUM : price = 2a0;
 PRINT("Unterminated string literal);
-NUM : rate = 10 % 3;
-UNKNOWN @ symbol $ here
+/* Unclosed multi-line comment at end
 END`,
   },
   {
@@ -48,12 +68,12 @@ END`,
     name: 'Variables & Data Types',
     description: 'Declaring NUM (integer) and CHR (character) constants and variables with assignment and delimiters.',
     code: `START
-NUM : total_score = 100, bonus = 15;
+NUM : tot_score = 100, bonus = 15;
 CHR : initial = 'K', status = 'P';
 PRINT("Student Score Summary");
-PRINT(total_score);
-total_score = total_score + bonus;
-PRINT(total_score);
+PRINT(tot_score);
+tot_score = tot_score + bonus;
+PRINT(tot_score);
 END`,
   },
   {
